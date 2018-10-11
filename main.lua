@@ -142,8 +142,8 @@ local function DisplayOutput(output)
 
         --scrollbar 
         scrollbar = CreateFrame("Slider", "ARWIC_SIMCDJ_scrollbar", scrollframe, "UIPanelScrollBarTemplate") 
-        scrollbar:SetPoint("TOPLEFT", mainFrame, "TOPRIGHT", 4, -16) 
-        scrollbar:SetPoint("BOTTOMLEFT", mainFrame, "BOTTOMRIGHT", 4, 16) 
+        scrollbar:SetPoint("TOPLEFT", mainFrame, "TOPRIGHT", -20, -40) 
+        scrollbar:SetPoint("BOTTOMLEFT", mainFrame, "BOTTOMRIGHT", -20, 20) 
         scrollbar:SetMinMaxValues(1, 5000) 
         scrollbar:SetValueStep(1) 
         scrollbar.scrollStep = 1 
@@ -177,6 +177,7 @@ local function DisplayOutput(output)
     mainFrame:Show()
     editBox:SetText(output)
     editBox:HighlightText()
+    scrollbar:SetValue(1)
 end
 
 local function BuildUI()
