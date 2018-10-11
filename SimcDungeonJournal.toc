@@ -1,0 +1,7 @@
+## Interface: 80000
+## Title: SimcDungeonJournal
+## Notes: Constructs SimC export strings from the currently open dungeon journal loot list
+## Author: Arwic
+## Version: 1.0.0
+
+main.lua
