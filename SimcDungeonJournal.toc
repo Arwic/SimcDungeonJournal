@@ -1,6 +1,6 @@
 ## Interface: 80000
 ## Title: SimcDungeonJournal
-## Notes: Constructs SimC export strings from the currently open dungeon journal loot list
+## Notes: Generates SimC input strings from the currently open dungeon journal loot table
 ## Author: Arwic
 ## Version: 1.0.0
 

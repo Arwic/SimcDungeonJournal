@@ -63,7 +63,7 @@ local function GetVisibleItemStrings(forcedIlvl)
     local output = ""
     local playerName = UnitName("player")
     local itemLevel = difficultyMap[encounterJournalDifficulty]
-    if type(forcedIlvl) == "number" then
+    if type(forcedIlvl) == "number" and forcedIlvl ~= 0 then
         itemLevel = forcedIlvl
     end
 
@@ -214,7 +214,7 @@ local function BuildUI()
         btn:SetPoint("BOTTOM", editBox, "BOTTOM")
         btn:SetWidth(80)
         btn:SetHeight(20)
-        btn:SetText("SimcDJ")
+        btn:SetText("Simc")
         btn:SetScript("OnClick", function()
             ARWIC_SIMCDJ_ilvlEditBox:ClearFocus()
             local output = GetVisibleItemStrings(ARWIC_SIMCDJ_ilvlEditBox:GetNumber())
