@@ -1,15 +1,3 @@
-local OFFSET_ITEM_ID = 1
-local OFFSET_ENCHANT_ID = 2
-local OFFSET_GEM_ID_1 = 3
-local OFFSET_GEM_ID_2 = 4
-local OFFSET_GEM_ID_3 = 5
-local OFFSET_GEM_ID_4 = 6
-local OFFSET_GEM_BASE = OFFSET_GEM_ID_1
-local OFFSET_SUFFIX_ID = 7
-local OFFSET_FLAGS = 11
-local OFFSET_CONTEXT = 12
-local OFFSET_BONUS_ID = 13
-local OFFSET_UPGRADE_ID = 14 -- Flags = 0x4
 
 local slotMap = {
     ["Head"] = 'head',
@@ -24,11 +12,10 @@ local slotMap = {
     ["Waist"] = 'waist',
     ["Legs"] = 'legs',
     ["Feet"] = 'feet',
-    ["Finger"] = 'finger1',
-    ["Trinket"] = 'trinket1',
     ["Ranged"] = 'main_hand',
-    ["off_hand"] = 'off_hand',
-    ["ammo"] = 'ammo'
+    ["Two-Hand"] = 'main_hand',
+    ["Off Hand"] = 'off_hand',
+    ["Held In Off-hand"] = 'off_hand',
 }
 
 local function table_length(t)
@@ -45,6 +32,8 @@ local function GetAzeritePowerPerms(tierInfos, mySpecID)
     local function _r(tier, last)
         -- if our tier is greater than the final tier put us in the done array and return
         if tier > finalTier then
+            -- strip trailing '/'
+            last = last:sub(1, -2)
             table.insert(done, last)
             return
         end
@@ -61,8 +50,7 @@ local function GetAzeritePowerPerms(tierInfos, mySpecID)
     return done
 end
 
-local function GetAllBossItemLinks()
-    -- reset output
+local function GetVisibleItemStrings()
     local output = ""
     local itemLevel = 385
     local playerName = UnitName("player")
@@ -70,8 +58,8 @@ local function GetAllBossItemLinks()
     for i = 1, EJ_GetNumLoot() do
         local itemID, encounterID, itemName, _, slot = EJ_GetLootInfoByIndex(i)
         local encounterName = EJ_GetEncounterInfo(encounterID)
-        local encounterName = encounterName:gsub("%W","")
-        
+        local encounterName = encounterName:gsub("%W","") -- strip characters that break simc
+        local itemName = itemName:gsub("%W",""):sub(10) -- strip characters that break simc
         if slot == "Finger" then
             -- slot 1
             output = format("%s\ncopy=%s - %s - %s,%s", output, encounterName, "Finger (1)", itemName, playerName)
@@ -86,6 +74,13 @@ local function GetAllBossItemLinks()
             -- slot 2
             output = format("%s\ncopy=%s - %s - %s,%s", output, encounterName, "Trinket (2)", itemName, playerName)
             output = format("%s\n%s=,id=%s,ilevel=%d\n", output, "trinket2", itemID, itemLevel)
+        elseif slot == "One-Hand" then
+            -- main hand
+            output = format("%s\ncopy=%s - %s - %s,%s", output, encounterName, "One Hand (1)", itemName, playerName)
+            output = format("%s\n%s=,id=%s,ilevel=%d\n", output, "main_hand", itemID, itemLevel)
+            -- off hand
+            output = format("%s\ncopy=%s - %s - %s,%s", output, encounterName, "One Hand (2)", itemName, playerName)
+            output = format("%s\n%s=,id=%s,ilevel=%d\n", output, "off_hand", itemID, itemLevel)
         elseif C_AzeriteEmpoweredItem.IsAzeriteEmpoweredItemByID(itemID) then
             local currentSpecID = GetSpecializationInfo(GetSpecialization())
             local tierInfos = C_AzeriteEmpoweredItem.GetAllTierInfoByItemID(itemID)
@@ -105,7 +100,12 @@ local function GetAllBossItemLinks()
 end
 
 local function DisplayOutput(output)
-    local mainFrame = CreateFrame("Frame", "ARWIC_SIMCDJ_mainFrame", UIParent)
+    local mainFrame
+    if ARWIC_SIMCDJ_mainFrame == nil then
+        mainFrame = CreateFrame("Frame", "ARWIC_SIMCDJ_mainFrame", UIParent)
+    else
+        mainFrame = ARWIC_SIMCDJ_mainFrame
+    end
     mainFrame:SetPoint("CENTER",0,0)
     mainFrame:SetSize(500,400)
     mainFrame.texture = mainFrame:CreateTexture(nil, "BACKGROUND")
@@ -113,7 +113,12 @@ local function DisplayOutput(output)
     mainFrame.texture:SetAllPoints(mainFrame)
     mainFrame:Show()
 
-    local closeButton = CreateFrame("BUTTON", "ARWIC_SIMCDJ_closeButton", mainFrame, "UIPanelCloseButton")
+    local closeButton
+    if ARWIC_SIMCDJ_closeButton == nil then
+        closeButton = CreateFrame("BUTTON", "ARWIC_SIMCDJ_closeButton", mainFrame, "UIPanelCloseButton")
+    else
+        closeButton = ARWIC_SIMCDJ_closeButton
+    end
     closeButton:SetPoint("TOPRIGHT", 0, 0)
     closeButton:SetWidth(20)
     closeButton:SetHeight(20)
@@ -121,15 +126,20 @@ local function DisplayOutput(output)
         mainFrame:Hide()
     end)
 
-    local editBox = CreateFrame("EditBox", "ARWIC_SIMCDJ_editBox", mainFrame)
+    local editBox
+    if ARWIC_SIMCDJ_editBox == nil then
+        editBox = CreateFrame("EditBox", "ARWIC_SIMCDJ_editBox", mainFrame)
+    else
+        editBox = ARWIC_SIMCDJ_editBox
+    end
     editBox:SetMultiLine(true)
     editBox:SetAllPoints(mainFrame)
-    editBox:SetFont("fonts/ARIALN.ttf", 20)
+    editBox:SetFont("fonts/ARIALN.ttf", 12)
     editBox:SetText(output)
 end
 
 SLASH_ARWIC_SIMCDDJ1 = "/simcdj"
 SlashCmdList["ARWIC_SIMCDDJ"] = function(msg)
-    local output = GetAllBossItemLinks()
+    local output = GetVisibleItemStrings()
     DisplayOutput(output)
 end 
