@@ -112,7 +112,10 @@ local function GetVisibleItemStrings(forcedIlvl)
 end
 
 local function DisplayOutput(output)
-    local mainFrame
+    local mainFrame = ARWIC_SIMCDJ_mainFrame
+    local editBox = ARWIC_SIMCDJ_editBox
+    local scrollContent = ARWIC_SIMCDJ_scrollContent
+    local scrollbar = ARWIC_SIMCDJ_scrollbar
     if ARWIC_SIMCDJ_mainFrame == nil then
         mainFrame = CreateFrame("Frame", "ARWIC_SIMCDJ_mainFrame", UIParent)
         mainFrame.texture = mainFrame:CreateTexture(nil, "BACKGROUND")
@@ -122,42 +125,63 @@ local function DisplayOutput(output)
         mainFrame:SetPoint("CENTER",0,0)
         mainFrame:SetSize(500,400)
         mainFrame:SetFrameStrata("DIALOG")
-    else
-        mainFrame = ARWIC_SIMCDJ_mainFrame
-    end
-    mainFrame:Show()
 
-    local closeButton
-    if ARWIC_SIMCDJ_closeButton == nil then
-        closeButton = CreateFrame("BUTTON", "ARWIC_SIMCDJ_closeButton", mainFrame, "UIPanelCloseButton")
+        local closeButton = CreateFrame("BUTTON", "ARWIC_SIMCDJ_closeButton", mainFrame, "UIPanelCloseButton")
         closeButton:SetPoint("TOPRIGHT", 0, 0)
         closeButton:SetWidth(20)
         closeButton:SetHeight(20)
         closeButton:SetScript("OnClick", function()
             mainFrame:Hide()
         end)
-    else
-        closeButton = ARWIC_SIMCDJ_closeButton
-    end
 
-    local editBox
-    if ARWIC_SIMCDJ_editBox == nil then
-        editBox = CreateFrame("EditBox", "ARWIC_SIMCDJ_editBox", mainFrame)
+        --scrollframe 
+        scrollframe = CreateFrame("ScrollFrame", nil, mainFrame) 
+        scrollframe:SetPoint("TOPLEFT", 10, -10) 
+        scrollframe:SetPoint("BOTTOMRIGHT", -10, 10) 
+        mainFrame.scrollframe = scrollframe 
+
+        --scrollbar 
+        scrollbar = CreateFrame("Slider", "ARWIC_SIMCDJ_scrollbar", scrollframe, "UIPanelScrollBarTemplate") 
+        scrollbar:SetPoint("TOPLEFT", mainFrame, "TOPRIGHT", 4, -16) 
+        scrollbar:SetPoint("BOTTOMLEFT", mainFrame, "BOTTOMRIGHT", 4, 16) 
+        scrollbar:SetMinMaxValues(1, 5000) 
+        scrollbar:SetValueStep(1) 
+        scrollbar.scrollStep = 1 
+        scrollbar:SetValue(0) 
+        scrollbar:SetWidth(16) 
+        scrollbar:SetScript("OnValueChanged", function (self, value) 
+            self:GetParent():SetVerticalScroll(value) 
+        end) 
+        mainFrame.scrollbar = scrollbar 
+        mainFrame:SetScript("OnMouseWheel", function(self, arg1)
+            scrollbar:SetValue(scrollbar:GetValue() - 100 * arg1)
+        end)
+
+        --content frame 
+        local scrollContent = CreateFrame("Frame", "ARWIC_SIMCDJ_scrollContent", scrollframe) 
+        scrollContent:SetSize(mainFrame:GetWidth(), mainFrame:GetHeight())
+        scrollframe.content = scrollContent 
+        scrollframe:SetScrollChild(scrollContent)
+        
+        editBox = CreateFrame("EditBox", "ARWIC_SIMCDJ_editBox", scrollContent)
         editBox:SetMultiLine(true)
-        editBox:SetAllPoints(mainFrame)
+        editBox:SetAllPoints(scrollContent)
         editBox:SetFont("fonts/ARIALN.ttf", 12)
         editBox:SetScript("OnEscapePressed", function(self)
             self:ClearFocus()
         end)
-    else
-        editBox = ARWIC_SIMCDJ_editBox
+        editBox:SetScript("OnTextChanged", function(self)
+            ARWIC_SIMCDJ_scrollbar:SetMinMaxValues(1, 5000)
+        end)
     end
+    mainFrame:Show()
     editBox:SetText(output)
     editBox:HighlightText()
 end
 
 local function BuildUI()
-    local editBox
+    local editBox = ARWIC_SIMCDJ_ilvlEditBox
+    local btn = ARWIC_SIMCDJ_ejButton
     if ARWIC_SIMCDJ_ilvlEditBox == nil then
         editBox = CreateFrame("EditBox", "ARWIC_SIMCDJ_ilvlEditBox", EncounterJournal, "InputBoxTemplate")
         editBox:SetPoint("TOPRIGHT", EncounterJournal, -105, 0)
@@ -169,6 +193,11 @@ local function BuildUI()
         editBox:SetScript("OnEscapePressed", function(self)
             self:ClearFocus()
         end)
+        editBox:SetScript("OnEnterPressed", function(self)
+            self:ClearFocus()
+            local output = GetVisibleItemStrings(self:GetNumber())
+            DisplayOutput(output)
+        end)
         editBox:SetScript("OnEnter", function(self)
             GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
             GameTooltip:AddLine("Custom item level. Leave blank to default to selected difficulty.", 1, 1, 1, true)
@@ -177,12 +206,7 @@ local function BuildUI()
         editBox:SetScript("OnLeave", function(self)
             GameTooltip:Hide()
         end)
-    else
-        editBox = ARWIC_SIMCDJ_ilvlEditBox
-    end
 
-    local btn
-    if ARWIC_SIMCDJ_ejButton == nil then
         btn = CreateFrame("BUTTON", "ARWIC_SIMCDJ_ejButton", ARWIC_SIMCDJ_ilvlEditBox, "UIPanelButtonTemplate")
         btn:SetPoint("LEFT", editBox, "RIGHT")
         btn:SetPoint("TOP", editBox, "TOP")
@@ -191,8 +215,8 @@ local function BuildUI()
         btn:SetHeight(20)
         btn:SetText("SimcDJ")
         btn:SetScript("OnClick", function()
-            local forcedIlvl = tonumber(ARWIC_SIMCDJ_ilvlEditBox:GetText())
-            local output = GetVisibleItemStrings(forcedIlvl)
+            ARWIC_SIMCDJ_ilvlEditBox:ClearFocus()
+            local output = GetVisibleItemStrings(ARWIC_SIMCDJ_ilvlEditBox:GetNumber())
             DisplayOutput(output)
         end)
         btn:SetScript("OnEnter", function(self)
@@ -203,8 +227,6 @@ local function BuildUI()
         btn:SetScript("OnLeave", function(self)
             GameTooltip:Hide()
         end)
-    else
-        btn = ARWIC_SIMCDJ_ejButton
     end
 end
 
