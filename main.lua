@@ -39,6 +39,28 @@ local function table_length(t)
     return count
 end
 
+local function GetAzeritePowerPerms(tierInfos, mySpecID)
+    local done = {}
+    local finalTier = table_length(tierInfos)
+    local function _r(tier, last)
+        -- if our tier is greater than the final tier put us in the done array and return
+        if tier > finalTier then
+            table.insert(done, last)
+            return
+        end
+        for _, powerID in pairs(tierInfos[tier].azeritePowerIDs) do
+            -- make sure the power is usable by our spec
+            if C_AzeriteEmpoweredItem.IsPowerAvailableForSpec(powerID, mySpecID) then
+                -- prepend the powerid
+                local next = powerID .. "/" .. last
+                _r(tier + 1, next)
+            end
+        end
+    end
+    _r(1, "")
+    return done
+end
+
 local function GetAllBossItemLinks()
     -- reset output
     local output = ""
@@ -67,25 +89,7 @@ local function GetAllBossItemLinks()
         elseif C_AzeriteEmpoweredItem.IsAzeriteEmpoweredItemByID(itemID) then
             local currentSpecID = GetSpecializationInfo(GetSpecialization())
             local tierInfos = C_AzeriteEmpoweredItem.GetAllTierInfoByItemID(itemID)
-            local azeritePowerPerms = {}
-            -- :)
-            for _, t1 in pairs(tierInfos[1].azeritePowerIDs) do
-                if C_AzeriteEmpoweredItem.IsPowerAvailableForSpec(t1, currentSpecID) then
-                    for _, t2 in pairs(tierInfos[2].azeritePowerIDs) do
-                        if C_AzeriteEmpoweredItem.IsPowerAvailableForSpec(t2, currentSpecID) then
-                            for _, t3 in pairs(tierInfos[3].azeritePowerIDs) do
-                                if C_AzeriteEmpoweredItem.IsPowerAvailableForSpec(t3, currentSpecID) then
-                                    for _, t4 in pairs(tierInfos[4].azeritePowerIDs) do
-                                        if C_AzeriteEmpoweredItem.IsPowerAvailableForSpec(t4, currentSpecID) then
-                                            table.insert(azeritePowerPerms, format("%d/%d/%d/%d",t4,t3,t2,t1))
-                                        end
-                                    end
-                                end
-                            end
-                        end
-                    end
-                end
-            end
+            local azeritePowerPerms = GetAzeritePowerPerms(tierInfos, currentSpecID)
             for _, powers in pairs(azeritePowerPerms) do
                 output = format("%s\ncopy=%s - %s - %s (%s),%s", output, encounterName, slot, itemName, powers, playerName)
                 output = format("%s\n%s=,id=%s,ilevel=%d,azerite_powers=%s\n", output, slotMap[slot], itemID, itemLevel, powers)
