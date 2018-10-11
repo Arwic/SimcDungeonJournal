@@ -31,13 +31,12 @@ local slotMap = {
     ["ammo"] = 'ammo'
 }
 
-local function GetItemStringFromItemLink(slotNum, itemLink, itemLevel)
-    local itemSplit = GetItemSplit(itemLink)
-  
-    local itemId = itemSplit[OFFSET_ITEM_ID]
-  
-
-    return itemStr
+local function table_length(t)
+    local count = 0
+    for k, v in pairs(t) do
+        count = count + 1
+    end
+    return count
 end
 
 local function GetAllBossItemLinks()
@@ -65,13 +64,39 @@ local function GetAllBossItemLinks()
             -- slot 2
             output = format("%s\ncopy=%s - %s - %s,%s", output, encounterName, "Trinket (2)", itemName, playerName)
             output = format("%s\n%s=,id=%s,ilevel=%d\n", output, "trinket2", itemID, itemLevel)
+        elseif C_AzeriteEmpoweredItem.IsAzeriteEmpoweredItemByID(itemID) then
+            local currentSpecID = GetSpecializationInfo(GetSpecialization())
+            local tierInfos = C_AzeriteEmpoweredItem.GetAllTierInfoByItemID(itemID)
+            local azeritePowerPerms = {}
+            -- :)
+            for _, t1 in pairs(tierInfos[1].azeritePowerIDs) do
+                if C_AzeriteEmpoweredItem.IsPowerAvailableForSpec(t1, currentSpecID) then
+                    for _, t2 in pairs(tierInfos[2].azeritePowerIDs) do
+                        if C_AzeriteEmpoweredItem.IsPowerAvailableForSpec(t2, currentSpecID) then
+                            for _, t3 in pairs(tierInfos[3].azeritePowerIDs) do
+                                if C_AzeriteEmpoweredItem.IsPowerAvailableForSpec(t3, currentSpecID) then
+                                    for _, t4 in pairs(tierInfos[4].azeritePowerIDs) do
+                                        if C_AzeriteEmpoweredItem.IsPowerAvailableForSpec(t4, currentSpecID) then
+                                            table.insert(azeritePowerPerms, format("%d/%d/%d/%d",t4,t3,t2,t1))
+                                        end
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+            for _, powers in pairs(azeritePowerPerms) do
+                output = format("%s\ncopy=%s - %s - %s (%s),%s", output, encounterName, slot, itemName, powers, playerName)
+                output = format("%s\n%s=,id=%s,ilevel=%d,azerite_powers=%s\n", output, slotMap[slot], itemID, itemLevel, powers)
+            end
         else
             output = format("%s\ncopy=%s - %s - %s,%s", output, encounterName, slot, itemName, playerName)
             output = format("%s\n%s=,id=%s,ilevel=%d\n", output, slotMap[slot], itemID, itemLevel)
         end
     end
 
-    print(output)
+    --print(output)
     return output
 end
 
