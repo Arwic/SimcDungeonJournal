@@ -1,5 +1,22 @@
 
 local encounterJournalDifficulty = 16
+local encounterJournalInstance = 16
+
+local instanceItemLevelMap = {
+    [1148] = { -- Uldir
+        [16] = 385,
+        [15] = 370,
+        [14] = 355,
+        [17] = 340,
+    },
+    [1352] = { -- BoD
+        [16] = 415,
+        [15] = 400,
+        [14] = 385,
+        [17] = 370,
+    },
+    
+}
 
 local difficultyMap = {
     [16] = 385,
@@ -59,13 +76,45 @@ local function GetAzeritePowerPermuts(tierInfos, mySpecID)
     return done
 end
 
-local function GetVisibleItemStrings(forcedIlvl)
-    local output = ""
-    local playerName = UnitName("player")
-    local itemLevel = difficultyMap[encounterJournalDifficulty]
+-- Dialogue that enables the user to name a new profile
+StaticPopupDialogs["ARWIC_SIMCDJ_NO_ILVLS"] = {
+    text = "The instance '%s' has no predefined item level values, please enter an item level.",
+    button1 = "OK",
+    button2 = "Cancel",
+    OnAccept = function(sender)
+        local itemLevel = sender.editBox:GetNumber()
+        local output = ARWIC_SIMCDJ_GetVisibleItemStrings(itemLevel)
+        ARWIC_SIMCDJ_DisplayOutput(output)
+    end,
+    timeout = 0,
+    whileDead = true,
+    hideOnEscape = true,
+    preferredIndex = 3,
+    hasEditBox = true,
+    enterClicksFirstButton = true,
+}
+local function StaticPopupShow_NoItemLevel(instnaceName)
+    StaticPopup_Show("ARWIC_SIMCDJ_NO_ILVLS", instnaceName)
+end
+
+
+function ARWIC_SIMCDJ_GetVisibleItemStrings(forcedIlvl)
+    local itemLevel = 0
     if type(forcedIlvl) == "number" and forcedIlvl ~= 0 then
         itemLevel = forcedIlvl
+    else
+        local dungeonName, _, _, _, _, _, dungeonAreaMapID = EJ_GetInstanceInfo()
+        local itemLevelMap = instanceItemLevelMap[dungeonAreaMapID]
+        if itemLevelMap ~= nil then
+            itemLevel = itemLevelMap[encounterJournalDifficulty]
+        else
+            StaticPopupShow_NoItemLevel(dungeonName)
+            return -- leave here because the static popup will recall this method later with a forced ilvl
+        end
     end
+
+    local output = ""
+    local playerName = UnitName("player")
 
     for i = 1, EJ_GetNumLoot() do
         local itemID, encounterID, itemName, _, slot = EJ_GetLootInfoByIndex(i)
@@ -109,11 +158,13 @@ local function GetVisibleItemStrings(forcedIlvl)
         end
     end
 
-    --print(output)
     return output
 end
 
-local function DisplayOutput(output)
+function ARWIC_SIMCDJ_DisplayOutput(output)
+    if output == nil then
+        return
+    end
     local mainFrame = ARWIC_SIMCDJ_mainFrame
     local editBox = ARWIC_SIMCDJ_editBox
     local scrollContent = ARWIC_SIMCDJ_scrollContent
@@ -199,12 +250,12 @@ local function BuildUI()
         end)
         editBox:SetScript("OnEnterPressed", function(self)
             self:ClearFocus()
-            local output = GetVisibleItemStrings(self:GetNumber())
-            DisplayOutput(output)
+            local output = ARWIC_SIMCDJ_GetVisibleItemStrings(self:GetNumber())
+            ARWIC_SIMCDJ_DisplayOutput(output)
         end)
         editBox:SetScript("OnEnter", function(self)
             GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-            GameTooltip:AddLine("Custom item level. Leave blank to default to selected difficulty.", 1, 1, 1, true)
+            GameTooltip:AddLine("Custom item level. Leave blank to default to selected difficulty for supported instances.", 1, 1, 1, true)
             GameTooltip:Show()
         end)
         editBox:SetScript("OnLeave", function(self)
@@ -221,8 +272,8 @@ local function BuildUI()
         btn:SetText("Simc")
         btn:SetScript("OnClick", function()
             ARWIC_SIMCDJ_ilvlEditBox:ClearFocus()
-            local output = GetVisibleItemStrings(ARWIC_SIMCDJ_ilvlEditBox:GetNumber())
-            DisplayOutput(output)
+            local output = ARWIC_SIMCDJ_GetVisibleItemStrings(ARWIC_SIMCDJ_ilvlEditBox:GetNumber())
+            ARWIC_SIMCDJ_DisplayOutput(output)
         end)
         btn:SetScript("OnEnter", function(self)
             GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
@@ -238,8 +289,8 @@ end
 SLASH_ARWIC_SIMCDDJ1 = "/simcdj"
 SlashCmdList["ARWIC_SIMCDDJ"] = function(args)
     local forcedIlvl = tonumber(args)
-    local output = GetVisibleItemStrings(forcedIlvl)
-    DisplayOutput(output)
+    local output = ARWIC_SIMCDJ_GetVisibleItemStrings(forcedIlvl)
+    ARWIC_SIMCDJ_DisplayOutput(output)
 end 
 
 local events = {}
