@@ -69,41 +69,43 @@ local function GetVisibleItemStrings(forcedIlvl)
 
     for i = 1, EJ_GetNumLoot() do
         local itemID, encounterID, itemName, _, slot = EJ_GetLootInfoByIndex(i)
-        local encounterName = EJ_GetEncounterInfo(encounterID)
-        local encounterName = encounterName:gsub("%W","") -- strip characters that break simc
-        local itemName = itemName:gsub("%W",""):sub(10) -- strip characters that break simc
-        if slot == "Finger" then
-            -- slot 1
-            output = format("%s\ncopy=%s - %s - %s,%s", output, encounterName, "Finger (1)", itemName, playerName)
-            output = format("%s\n%s=,id=%s,ilevel=%d\n", output, "finger1", itemID, itemLevel)
-            -- slot 2
-            output = format("%s\ncopy=%s - %s - %s,%s", output, encounterName, "Finger (2)", itemName, playerName)
-            output = format("%s\n%s=,id=%s,ilevel=%d\n", output, "finger2", itemID, itemLevel)
-        elseif slot == "Trinket" then
-            -- slot 1
-            output = format("%s\ncopy=%s - %s - %s,%s", output, encounterName, "Trinket (1)", itemName, playerName)
-            output = format("%s\n%s=,id=%s,ilevel=%d\n", output, "trinket1", itemID, itemLevel)
-            -- slot 2
-            output = format("%s\ncopy=%s - %s - %s,%s", output, encounterName, "Trinket (2)", itemName, playerName)
-            output = format("%s\n%s=,id=%s,ilevel=%d\n", output, "trinket2", itemID, itemLevel)
-        elseif slot == "One-Hand" then
-            -- main hand
-            output = format("%s\ncopy=%s - %s - %s,%s", output, encounterName, "One Hand (1)", itemName, playerName)
-            output = format("%s\n%s=,id=%s,ilevel=%d\n", output, "main_hand", itemID, itemLevel)
-            -- off hand
-            output = format("%s\ncopy=%s - %s - %s,%s", output, encounterName, "One Hand (2)", itemName, playerName)
-            output = format("%s\n%s=,id=%s,ilevel=%d\n", output, "off_hand", itemID, itemLevel)
-        elseif C_AzeriteEmpoweredItem.IsAzeriteEmpoweredItemByID(itemID) then
-            local currentSpecID = GetSpecializationInfo(GetSpecialization())
-            local tierInfos = C_AzeriteEmpoweredItem.GetAllTierInfoByItemID(itemID)
-            local azeritePowerPermuts = GetAzeritePowerPermuts(tierInfos, currentSpecID)
-            for _, powers in pairs(azeritePowerPermuts) do
-                output = format("%s\ncopy=%s - %s - %s (%s),%s", output, encounterName, slot, itemName, powers, playerName)
-                output = format("%s\n%s=,id=%s,ilevel=%d,azerite_powers=%s\n", output, slotMap[slot], itemID, itemLevel, powers)
+        if slot ~= nil and slot ~= "" then -- Dont try and create copy profiles for non armour/weapon items like mounts and pets
+            local encounterName = EJ_GetEncounterInfo(encounterID)
+            local encounterName = encounterName:gsub("%W","") -- strip characters that break simc
+            local itemName = itemName:gsub("%W",""):sub(10) -- strip characters that break simc
+            if slot == "Finger" then
+                -- slot 1
+                output = format("%s\ncopy=%s - %s - %s,%s", output, encounterName, "Finger (1)", itemName, playerName)
+                output = format("%s\n%s=,id=%s,ilevel=%d\n", output, "finger1", itemID, itemLevel)
+                -- slot 2
+                output = format("%s\ncopy=%s - %s - %s,%s", output, encounterName, "Finger (2)", itemName, playerName)
+                output = format("%s\n%s=,id=%s,ilevel=%d\n", output, "finger2", itemID, itemLevel)
+            elseif slot == "Trinket" then
+                -- slot 1
+                output = format("%s\ncopy=%s - %s - %s,%s", output, encounterName, "Trinket (1)", itemName, playerName)
+                output = format("%s\n%s=,id=%s,ilevel=%d\n", output, "trinket1", itemID, itemLevel)
+                -- slot 2
+                output = format("%s\ncopy=%s - %s - %s,%s", output, encounterName, "Trinket (2)", itemName, playerName)
+                output = format("%s\n%s=,id=%s,ilevel=%d\n", output, "trinket2", itemID, itemLevel)
+            elseif slot == "One-Hand" then
+                -- main hand
+                output = format("%s\ncopy=%s - %s - %s,%s", output, encounterName, "One Hand (1)", itemName, playerName)
+                output = format("%s\n%s=,id=%s,ilevel=%d\n", output, "main_hand", itemID, itemLevel)
+                -- off hand
+                output = format("%s\ncopy=%s - %s - %s,%s", output, encounterName, "One Hand (2)", itemName, playerName)
+                output = format("%s\n%s=,id=%s,ilevel=%d\n", output, "off_hand", itemID, itemLevel)
+            elseif C_AzeriteEmpoweredItem.IsAzeriteEmpoweredItemByID(itemID) then
+                local currentSpecID = GetSpecializationInfo(GetSpecialization())
+                local tierInfos = C_AzeriteEmpoweredItem.GetAllTierInfoByItemID(itemID)
+                local azeritePowerPermuts = GetAzeritePowerPermuts(tierInfos, currentSpecID)
+                for _, powers in pairs(azeritePowerPermuts) do
+                    output = format("%s\ncopy=%s - %s - %s (%s),%s", output, encounterName, slot, itemName, powers, playerName)
+                    output = format("%s\n%s=,id=%s,ilevel=%d,azerite_powers=%s\n", output, slotMap[slot], itemID, itemLevel, powers)
+                end
+            else
+                output = format("%s\ncopy=%s - %s - %s,%s", output, encounterName, slot, itemName, playerName)
+                output = format("%s\n%s=,id=%s,ilevel=%d\n", output, slotMap[slot], itemID, itemLevel)
             end
-        else
-            output = format("%s\ncopy=%s - %s - %s,%s", output, encounterName, slot, itemName, playerName)
-            output = format("%s\n%s=,id=%s,ilevel=%d\n", output, slotMap[slot], itemID, itemLevel)
         end
     end
 
@@ -191,6 +193,7 @@ local function BuildUI()
         editBox:SetNumeric(true)
         editBox:SetFont("fonts/ARIALN.ttf", 12)
         editBox:SetAutoFocus(false)
+        editBox:SetFrameStrata("HIGH")
         editBox:SetScript("OnEscapePressed", function(self)
             self:ClearFocus()
         end)
@@ -212,6 +215,7 @@ local function BuildUI()
         btn:SetPoint("LEFT", editBox, "RIGHT")
         btn:SetPoint("TOP", editBox, "TOP")
         btn:SetPoint("BOTTOM", editBox, "BOTTOM")
+        btn:SetFrameStrata("HIGH")
         btn:SetWidth(80)
         btn:SetHeight(20)
         btn:SetText("Simc")
