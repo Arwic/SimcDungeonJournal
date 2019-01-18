@@ -2,6 +2,6 @@
 ## Title: SimcDungeonJournal
 ## Notes: Generates SimC input strings from the currently open dungeon journal loot table
 ## Author: Arwic
-## Version: 1.0.1
+## Version: 1.1.1
 
 main.lua
